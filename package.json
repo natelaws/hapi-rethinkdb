@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/ghostbar/hapi-rethinkdb",
   "dependencies": {
+    "rethinkdb-init": "0.0.5"
   },
   "devDependencies": {
     "hapi": ">=8.2.0",

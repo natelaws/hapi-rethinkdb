@@ -1,6 +1,8 @@
 'use strict';
 
 var rethink = require('rethinkdb');
+var rethinkdbInit = require('rethinkdb-init');
+
 
 exports.register = function (plugin, opts, next) {
   opts = opts || {};
@@ -18,23 +20,27 @@ exports.register = function (plugin, opts, next) {
       opts.authKey = url.auth.split(':')[1];
   }
 
-  rethink.connect(opts, function (err, conn) {
-    if (err) {
+  rethinkdbInit(rethink);
+
+  var tables = (opts.table ? [opts.table] : opts.tables) || [];
+  rethink.init(opts, tables)
+    .then(function (conn) {
+
+      plugin.expose('connection', conn);
+      plugin.expose('library', rethink);
+      plugin.bind({
+        rethinkdbConn: conn,
+        rethinkdb: rethink
+      });
+
+      plugin.log(['hapi-rethinkdb', 'info'], 'RethinkDB connection established');
+      return next();
+    }).catch(function (err) {
+
       plugin.log(['hapi-rethinkdb', 'error'], err.message);
       console.error(err);
       return next(err);
-    }
-
-    plugin.expose('connection', conn);
-    plugin.expose('library', rethink);
-    plugin.bind({
-      rethinkdbConn: conn,
-      rethinkdb: rethink
     });
-    
-    plugin.log(['hapi-rethinkdb', 'info'], 'RethinkDB connection established');
-    return next();
-  });
 };
 
 exports.register.attributes = {
